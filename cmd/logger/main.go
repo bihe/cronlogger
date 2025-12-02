@@ -2,8 +2,6 @@ package main
 
 import (
 	"cronlogger"
-	"cronlogger/persistence"
-	"database/sql"
 	"flag"
 	"fmt"
 	"os"
@@ -38,17 +36,19 @@ func main() {
 		os.Exit(1)
 	}
 	if result != "" {
-		// got the piped result of the command, store the result
-		db := persistence.MustCreateSqliteConn(dbPath)
+		store, db, err := cronlogger.CreateSqliteStoreFromDbPath(dbPath)
+		if err != nil {
+			fmt.Printf("%v, exiting!\n", err)
+			os.Exit(1)
+		}
 		defer db.Close()
-		store := createStore(db)
 
 		var success bool
 		if exitCode == 0 {
 			success = true
 		}
 
-		_, err := store.Create(cronlogger.OpResultEntity{
+		_, err = store.Create(cronlogger.OpResultEntity{
 			App:     appName,
 			Success: success,
 			Output:  result,
@@ -59,18 +59,4 @@ func main() {
 			os.Exit(1)
 		}
 	}
-}
-
-func createStore(db *sql.DB) cronlogger.OpResultStore {
-	con, err := persistence.CreateGormSqliteCon(db)
-	if err != nil {
-		fmt.Printf("Could not create database connection: %v, exiting!\n", err)
-		os.Exit(1)
-	}
-
-	// Migrate the schema
-	con.Write.AutoMigrate(&cronlogger.OpResultEntity{})
-	con.Read.AutoMigrate(&cronlogger.OpResultEntity{})
-
-	return cronlogger.CreateStore(con)
 }

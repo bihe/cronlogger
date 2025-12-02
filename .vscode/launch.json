@@ -13,7 +13,20 @@
             "args": [
                 "--code=1",
                 "--app=App1",
-                "--db=../../store.db"
+                "--db=../../cronlog-store.db"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "::serve cronlogger::",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "args": [
+                "--host=localhost",
+                "--port=9000",
+                "--db=../../cronlog-store.db"
             ],
             "internalConsoleOptions": "openOnSessionStart"
         }

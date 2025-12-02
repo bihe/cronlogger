@@ -1,0 +1,114 @@
+package html
+
+import "fmt"
+import "net/http"
+
+css appcontent() {
+	padding-top: 0px;
+}
+
+css contentArea() {
+	height: 100%;
+	overflow: hidden;
+}
+
+css bodyContent() {
+	overflow: auto;
+	height: 100vh;
+	background-color: #ffffff;
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+css container() {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+}
+
+css applicationError() {
+	padding: 20px;
+}
+
+css errorText() {
+	color: var(--bs-form-invalid-border-color);
+}
+
+css errorDetails() {
+	padding: 7px;
+	background-color: #eeeeee;
+	border: 1px dashed #999999;
+	border-radius: 7px;
+}
+
+templ ErrorPageLayout(content templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<title>Cronlogger ERROR</title>
+			<base href="/"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+			<link rel="shortcun icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22currentColor%22%20class%3D%22bi%20bi-clock-history%22%20viewBox%3D%220%200%2016%2016%22%3E%0A%20%20%3Cpath%20d%3D%22M8.515%201.019A7%207%200%200%200%208%201V0a8%208%200%200%201%20.589.022zm2.004.45a7%207%200%200%200-.985-.299l.219-.976q.576.129%201.126.342zm1.37.71a7%207%200%200%200-.439-.27l.493-.87a8%208%200%200%201%20.979.654l-.615.789a7%207%200%200%200-.418-.302zm1.834%201.79a7%207%200%200%200-.653-.796l.724-.69q.406.429.747.91zm.744%201.352a7%207%200%200%200-.214-.468l.893-.45a8%208%200%200%201%20.45%201.088l-.95.313a7%207%200%200%200-.179-.483m.53%202.507a7%207%200%200%200-.1-1.025l.985-.17q.1.58.116%201.17zm-.131%201.538q.05-.254.081-.51l.993.123a8%208%200%200%201-.23%201.155l-.964-.267q.069-.247.12-.501m-.952%202.379q.276-.436.486-.908l.914.405q-.24.54-.555%201.038zm-.964%201.205q.183-.183.35-.378l.758.653a8%208%200%200%201-.401.432z%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M8%201a7%207%200%201%200%204.95%2011.95l.707.707A8.001%208.001%200%201%201%208%200z%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M7.5%203a.5.5%200%200%201%20.5.5v5.21l3.248%201.856a.5.5%200%200%201-.496.868l-3.5-2A.5.5%200%200%201%207%209V3.5a.5.5%200%200%201%20.5-.5%22%2F%3E%0A%3C%2Fsvg%3E">
+			<link rel="stylesheet" href="/assets/bootstrap.min.css">
+            <link rel="stylesheet" href="/assets/bootstrap-icons.min.css">
+            <style type="text/css">
+			body,html{margin:0;padding:0;height:100%;font-family:'Roboto Mono', monospace;font-size:0.9em}.container .item{text-align:center}.container h2{font-size:1.5rem;font-weight:500;letter-spacing:0.041875rem}
+			</style>
+		</head>
+		<body>
+			<div class={ appcontent(), "container" } style="height: 100%;">
+				<div class={ "row", contentArea() }>
+					<div class={ "col-main", bodyContent() }>
+						<!-- content here -->
+						@content
+						<!-- end -->
+					</div>
+				</div>
+			</div>
+            <script src="/assets/bootstrap.bundle.min.js"></script>
+		</body>
+	</html>
+}
+
+
+
+templ ErrorApplication(startPage string, r *http.Request, err string) {
+	<div class={ applicationError() }>
+		<h2>
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-bug" viewBox="0 0 16 16">
+				<path d="M4.355.522a.5.5 0 0 1 .623.333l.291.956A4.979 4.979 0 0 1 8 1c1.007 0 1.946.298 2.731.811l.29-.956a.5.5 0 1 1 .957.29l-.41 1.352A4.985 4.985 0 0 1 13 6h.5a.5.5 0 0 0 .5-.5V5a.5.5 0 0 1 1 0v.5A1.5 1.5 0 0 1 13.5 7H13v1h1.5a.5.5 0 0 1 0 1H13v1h.5a1.5 1.5 0 0 1 1.5 1.5v.5a.5.5 0 1 1-1 0v-.5a.5.5 0 0 0-.5-.5H13a5 5 0 0 1-10 0h-.5a.5.5 0 0 0-.5.5v.5a.5.5 0 1 1-1 0v-.5A1.5 1.5 0 0 1 2.5 10H3V9H1.5a.5.5 0 0 1 0-1H3V7h-.5A1.5 1.5 0 0 1 1 5.5V5a.5.5 0 0 1 1 0v.5a.5.5 0 0 0 .5.5H3c0-1.364.547-2.601 1.432-3.503l-.41-1.352a.5.5 0 0 1 .333-.623zM4 7v4a4 4 0 0 0 3.5 3.97V7H4zm4.5 0v7.97A4 4 0 0 0 12 11V7H8.5zM12 6a3.989 3.989 0 0 0-1.334-2.982A3.983 3.983 0 0 0 8 2a3.983 3.983 0 0 0-2.667 1.018A3.989 3.989 0 0 0 4 6h8z"></path>
+			</svg> Application Error occured!
+		</h2>
+		<br/>
+		<p class={ "h5", errorText() }>The current request could not be processed and led to an error!</p>
+		<br/>
+		<p class={ "h5", errorDetails() }>
+			Detail: { fmt.Sprintf("%v", err) }
+		</p>
+		<br/>
+		<hr/>
+		
+        <p class="h5"><strong>Request-Data</strong></p>
+        <ul>
+            <li>Host: <strong>{ r.Host }</strong></li>
+            <li>Method: <strong>{ r.Method }</strong></li>
+            <li>Request: <strong>{ r.RequestURI }</strong></li>
+            <li>Remote: <strong>{ r.RemoteAddr }</strong></li>
+            <li>Referer: <strong>{ r.Referer() }</strong></li>
+            <li>
+                Headers:
+                <ul>
+                    for k, v := range r.Header {
+                        <li>{ k }: <strong>{ fmt.Sprintf("%s", v) }</strong></li>
+                    }
+                </ul>
+            </li>
+        </ul>
+		
+		<a id="go_home" href={ templ.URL(startPage) }>
+			<button type="button" class="btn btn-lg btn-primary">Go back to Start-Page</button>
+		</a>
+	</div>
+}

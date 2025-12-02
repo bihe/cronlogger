@@ -3,7 +3,6 @@ PROJECTNAME=$(shell basename "$(PWD)")
 # Make is verbose in Linux. Make it silent.
 MAKEFLAGS += --silent
 
-VERSION="1.0.0-"
 COMMIT=`git rev-parse HEAD | cut -c 1-8`
 BUILD=`date -u +%Y%m%d.%H%M%S`
 
@@ -16,8 +15,6 @@ RESET  := $(shell tput -Txterm sgr0)
 
 ## set the default architecture should work for most Linux systems
 ARCH := amd64
-## we use litestream to sync databases, specify the version to use
-LITESTREAM_V := v0.5.2
 
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M), x86_64)
@@ -65,8 +62,11 @@ go-update:
 
 go-build:
 	@echo "  >  Building the repo ..."
-	GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o ./dist/linux/amd64/cronlogger ./cmd/logger/main.go
-	GOARCH=arm64 GOOS=linux go build -ldflags="-w -s" -o ./dist/linux/arm64/cronlogger ./cmd/logger/main.go
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o ./dist/linux/amd64/cronlogger ./cmd/logger/main.go
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -ldflags="-w -s" -o ./dist/linux/arm64/cronlogger ./cmd/logger/main.go
+
+	go tool templ generate && CGO_ENABLED=0 GOARCH=amd64 GOOS=linux  go build -ldflags="-w -s -X main.Version=${BUILD} -X main.Build=${COMMIT}" -o ./dist/linux/amd64/cronlogger_server ./cmd/server/main.go
+	go tool templ generate && CGO_ENABLED=0 GOARCH=arm64 GOOS=linux  go build -ldflags="-w -s -X main.Version=${BUILD} -X main.Build=${COMMIT}" -o ./dist/linux/arm64/cronlogger_server ./cmd/server/main.go
 
 go-test:
 	@echo "  >  Testing the repo ..."

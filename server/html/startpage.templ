@@ -1,0 +1,49 @@
+package html
+
+import "cronlogger"
+import "time"
+import "fmt"
+
+
+templ StartPage(items []cronlogger.OpResultEntity) {
+    
+    <h3>List all items of cronlogger execution</h3>
+
+    <table class="table">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Date</th>
+            <th scope="col">AppName</th>
+            <th scope="col">Result</th>
+            <th scope="col">Output</th>
+        </tr>
+    </thead>
+    <tbody>
+        for _, item := range items {
+           <tr>
+                <th scope="row">1</th>
+                <td>{item.Created.Format(time.RFC3339)}</td>
+                <td><span class="badge text-bg-primary">{item.App}</span></td>
+                if item.Success {
+                    <td><span class="badge rounded-pill text-bg-success">Success</span></td>
+                } else {
+                    <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
+                }
+                <td>
+                    <a class="" data-bs-toggle="collapse" href={fmt.Sprintf("#collapse-%s", item.ID)} role="button" aria-expanded="false" aria-controls="collapseExample">
+                        Toggle output
+                    </a>
+                    <div class="collapse" id={fmt.Sprintf("collapse-%s", item.ID)}>
+                        <div class="card card-body">
+                            <pre>
+                                {item.Output}
+                            </pre>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+    </table>
+}

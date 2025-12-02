@@ -3,6 +3,7 @@ package cronlogger
 import (
 	"context"
 	"cronlogger/persistence"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -38,6 +39,21 @@ func CreateStore(con persistence.Connection) OpResultStore {
 	return &dbStore{
 		con: con,
 	}
+}
+
+// CreateSqliteStoreFromDbPath initializes a new store from a sqlite file path
+func CreateSqliteStoreFromDbPath(dbPath string) (OpResultStore, *sql.DB, error) {
+	db := persistence.MustCreateSqliteConn(dbPath)
+	con, err := persistence.CreateGormSqliteCon(db)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not create database connection: %v", err)
+	}
+
+	// Migrate the schema
+	con.Write.AutoMigrate(&OpResultEntity{})
+	con.Read.AutoMigrate(&OpResultEntity{})
+
+	return CreateStore(con), db, nil
 }
 
 // --------------------------------------------------------------------------
