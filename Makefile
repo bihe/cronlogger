@@ -4,7 +4,7 @@ PROJECTNAME=$(shell basename "$(PWD)")
 MAKEFLAGS += --silent
 
 COMMIT=`git rev-parse HEAD | cut -c 1-8`
-BUILD=`date -u +%Y%m%d.%H%M%S`
+BUILD=`date -u +%Y.%m.%d_%H%M`
 
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
