@@ -1,4 +1,4 @@
-package cronlogger
+package store
 
 import (
 	"context"

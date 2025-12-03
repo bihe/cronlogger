@@ -3,15 +3,15 @@ module cronlogger
 go 1.25.2
 
 require (
+	github.com/a-h/templ v0.3.960
 	github.com/google/uuid v1.6.0
-	github.com/ncruces/go-sqlite3 v0.30.2
+	github.com/ncruces/go-sqlite3 v0.30.3
 	github.com/ncruces/go-sqlite3/gormlite v0.30.2
 	gorm.io/gorm v1.31.1
 )
 
 require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
-	github.com/a-h/templ v0.3.960 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

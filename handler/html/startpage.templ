@@ -1,11 +1,11 @@
 package html
 
-import "cronlogger"
+import "cronlogger/store"
 import "time"
 import "fmt"
 
 
-templ StartPage(items []cronlogger.OpResultEntity) {
+templ StartPage(items []store.OpResultEntity) {
     
     <h3>List all items of cronlogger execution</h3>
 
@@ -20,9 +20,9 @@ templ StartPage(items []cronlogger.OpResultEntity) {
         </tr>
     </thead>
     <tbody>
-        for _, item := range items {
+        for i, item := range items {
            <tr>
-                <th scope="row">1</th>
+                <th scope="row">{fmt.Sprintf("%d", i+1)}</th>
                 <td>{item.Created.Format(time.RFC3339)}</td>
                 <td><span class="badge text-bg-primary">{item.App}</span></td>
                 if item.Success {

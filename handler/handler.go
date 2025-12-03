@@ -1,8 +1,8 @@
-package server
+package handler
 
 import (
-	"cronlogger"
-	"cronlogger/server/html"
+	"cronlogger/handler/html"
+	"cronlogger/store"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,12 +11,12 @@ import (
 // CronLogHandler is used to visualize the content of
 // the cronlogger store via HTML templates
 type CronLogHandler struct {
-	store  cronlogger.OpResultStore
+	store  store.OpResultStore
 	logger *slog.Logger
 }
 
-// NewHandler returns a new instance of the CronLogHandler
-func NewHandler(store cronlogger.OpResultStore, logger *slog.Logger) *CronLogHandler {
+// New returns a new instance of the CronLogHandler
+func New(store store.OpResultStore, logger *slog.Logger) *CronLogHandler {
 	return &CronLogHandler{
 		store:  store,
 		logger: logger,

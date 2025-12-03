@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"cronlogger"
-	"cronlogger/server"
+	"cronlogger/handler"
+	"cronlogger/store"
 	"errors"
 	"flag"
 	"fmt"
@@ -48,13 +48,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	store, db, err := cronlogger.CreateSqliteStoreFromDbPath(dbPath)
+	store, db, err := store.CreateSqliteStoreFromDbPath(dbPath)
 	if err != nil {
 		panic(fmt.Sprintf("%v, exiting", err))
 	}
 	defer db.Close()
 
-	handler := server.NewHandler(store, setupLogging(logLevel))
+	handler := handler.New(store, setupLogging(logLevel))
 	startServer(fmt.Sprintf("%s:%d", host, port), handler)
 }
 
@@ -87,9 +87,9 @@ func printServerBanner(name, version, build, addr string) {
 	fmt.Printf("%s Ready!\n", "🏁")
 }
 
-func startServer(addr string, handler *server.CronLogHandler) {
+func startServer(addr string, hdlr *handler.CronLogHandler) {
 	mux := http.NewServeMux()
-	server.SetupRoutes(mux, handler)
+	handler.SetupRoutes(mux, hdlr)
 
 	srv := &http.Server{
 		Addr:    addr,

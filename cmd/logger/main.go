@@ -2,6 +2,7 @@ package main
 
 import (
 	"cronlogger"
+	"cronlogger/store"
 	"flag"
 	"fmt"
 	"os"
@@ -36,7 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 	if result != "" {
-		store, db, err := cronlogger.CreateSqliteStoreFromDbPath(dbPath)
+		str, db, err := store.CreateSqliteStoreFromDbPath(dbPath)
 		if err != nil {
 			fmt.Printf("%v, exiting!\n", err)
 			os.Exit(1)
@@ -48,7 +49,7 @@ func main() {
 			success = true
 		}
 
-		_, err = store.Create(cronlogger.OpResultEntity{
+		_, err = str.Create(store.OpResultEntity{
 			App:     appName,
 			Success: success,
 			Output:  result,

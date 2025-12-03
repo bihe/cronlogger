@@ -1,36 +1,18 @@
-package cronlogger_test
+package store_test
 
 import (
-	"cronlogger"
-	"cronlogger/persistence"
+	"cronlogger/store"
 	"database/sql"
 	"testing"
 	"time"
 )
 
-func getStore(t *testing.T) (cronlogger.OpResultStore, *sql.DB) {
-	return getStoreFile(":memory:", t)
-}
-
-func getStoreFile(file string, t *testing.T) (cronlogger.OpResultStore, *sql.DB) {
-	var (
-		err error
-	)
-	dbCon := persistence.MustCreateSqliteConn(file)
-	con, err := persistence.CreateGormSqliteCon(dbCon)
+func getStore(t *testing.T) (store.OpResultStore, *sql.DB) {
+	store, db, err := store.CreateSqliteStoreFromDbPath(":memory:")
 	if err != nil {
 		t.Fatalf("cannot create database connection: %v", err)
 	}
-	// Migrate the schema
-	con.Write.AutoMigrate(&cronlogger.OpResultEntity{})
-	con.Read.AutoMigrate(&cronlogger.OpResultEntity{})
-	db, err := con.Write.DB()
-	if err != nil {
-		t.Fatalf("could not get DB handle; %v", err)
-	}
-	con.Read = con.Write
-	repo := cronlogger.CreateStore(con)
-	return repo, db
+	return store, db
 }
 
 func Test_Create_OpResult(t *testing.T) {
@@ -45,7 +27,7 @@ func Test_Create_OpResult(t *testing.T) {
 		t.Error("there should be not items in the result")
 	}
 
-	item, err := s.Create(cronlogger.OpResultEntity{
+	item, err := s.Create(store.OpResultEntity{
 		App:     "test",
 		Success: true,
 		Output:  "",
@@ -76,17 +58,17 @@ func Test_Result_Order(t *testing.T) {
 	s, db := getStore(t)
 	defer db.Close()
 
-	s.Create(cronlogger.OpResultEntity{
+	s.Create(store.OpResultEntity{
 		App:     "test1",
 		Success: true,
 		Output:  "",
 	})
-	s.Create(cronlogger.OpResultEntity{
+	s.Create(store.OpResultEntity{
 		App:     "test2",
 		Success: false,
 		Output:  "",
 	})
-	s.Create(cronlogger.OpResultEntity{
+	s.Create(store.OpResultEntity{
 		App:     "test3",
 		Success: false,
 		Output:  "",
