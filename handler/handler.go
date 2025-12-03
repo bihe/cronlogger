@@ -11,15 +11,17 @@ import (
 // CronLogHandler is used to visualize the content of
 // the cronlogger store via HTML templates
 type CronLogHandler struct {
-	store  store.OpResultStore
-	logger *slog.Logger
+	store   store.OpResultStore
+	logger  *slog.Logger
+	version string
 }
 
 // New returns a new instance of the CronLogHandler
-func New(store store.OpResultStore, logger *slog.Logger) *CronLogHandler {
+func New(store store.OpResultStore, logger *slog.Logger, version string) *CronLogHandler {
 	return &CronLogHandler{
-		store:  store,
-		logger: logger,
+		store:   store,
+		logger:  logger,
+		version: version,
 	}
 }
 
@@ -36,6 +38,6 @@ func (c *CronLogHandler) StartPage() http.HandlerFunc {
 			return
 		}
 
-		html.Layout(html.StartPage(items)).Render(r.Context(), w)
+		html.Layout(html.StartPage(items), c.version).Render(r.Context(), w)
 	}
 }

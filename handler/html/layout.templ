@@ -1,6 +1,6 @@
 package html
 
-templ Layout(contents templ.Component) {
+templ Layout(contents templ.Component, version string) {
     <!doctype html>
     <html lang="en">
     <head>
@@ -12,11 +12,18 @@ templ Layout(contents templ.Component) {
         <link rel="stylesheet" href="/assets/bootstrap-icons.min.css">
     </head>
     <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark"> 
+            <div class="container-fluid d-flex flex-wrap"> 
                 <a class="navbar-brand" href="#"><i class="bi bi-clock-history"></i>&nbsp;&nbsp;Cronlogger</a>
-            </div>
+
+                <ul class="nav me-auto"> 
+                </ul> 
+                <ul class="nav"> 
+                    <li class="nav-item"><span><span class="badge rounded-pill text-bg-warning">{version}</span></span></li> 
+                </ul> 
+            </div> 
         </nav>
+
 
         <div class="container-fluid" style="padding-top:20px;">
             @contents

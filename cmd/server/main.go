@@ -42,8 +42,9 @@ func main() {
 	flag.BoolVar(&help, "help", false, "show the help information")
 	flag.Parse()
 
+	ver := fmt.Sprintf("%s-%s", Version, Build)
 	if help {
-		fmt.Printf("Cronlogger %s-%s\n\n", Version, Build)
+		fmt.Printf("Cronlogger %s\n\n", ver)
 		flag.Usage()
 		os.Exit(0)
 	}
@@ -54,7 +55,7 @@ func main() {
 	}
 	defer db.Close()
 
-	handler := handler.New(store, setupLogging(logLevel))
+	handler := handler.New(store, setupLogging(logLevel), ver)
 	startServer(fmt.Sprintf("%s:%d", host, port), handler)
 }
 
