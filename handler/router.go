@@ -12,7 +12,9 @@ import (
 var content embed.FS
 
 func SetupRoutes(mux *http.ServeMux, handler *CronLogHandler) {
-	mux.HandleFunc("/", handler.StartPage())
+	mux.HandleFunc("/", handler.RedirectStart())
+	mux.HandleFunc("/StartPage", handler.StartPage())
+	mux.HandleFunc("/StartPage/TableResult", handler.TableResult())
 	serveStaticDir(mux, "assets")
 }
 

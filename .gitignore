@@ -23,3 +23,5 @@ tmp/
 coverage.txt
 store.db
 cronlog-store.db
+litestream/litestream
+cronlog-store.db-*

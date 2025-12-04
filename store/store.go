@@ -32,6 +32,7 @@ func (OpResultEntity) TableName() string {
 type OpResultStore interface {
 	Create(item OpResultEntity) (OpResultEntity, error)
 	GetAll() ([]OpResultEntity, error)
+	GetPagedItems(pageSize, skip int, from, until *time.Time) (PagedOpResults, error)
 }
 
 // CreateStore creates a new store to persist data
@@ -54,6 +55,11 @@ func CreateSqliteStoreFromDbPath(dbPath string) (OpResultStore, *sql.DB, error) 
 	con.Read.AutoMigrate(&OpResultEntity{})
 
 	return CreateStore(con), db, nil
+}
+
+type PagedOpResults struct {
+	TotalCount int64
+	Items      []OpResultEntity
 }
 
 // --------------------------------------------------------------------------
@@ -83,4 +89,48 @@ func (s *dbStore) GetAll() ([]OpResultEntity, error) {
 		return nil, fmt.Errorf("could not retrieve all entries; %v", err)
 	}
 	return results, nil
+}
+
+func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time) (PagedOpResults, error) {
+	if pageSize < 0 {
+		return PagedOpResults{}, fmt.Errorf("negative pagesizes do not make sense")
+	}
+
+	if skip < 0 {
+		return PagedOpResults{}, fmt.Errorf("negative offset does not make sense")
+	}
+
+	where := ""
+	dateParams := make([]any, 0)
+	if from != nil && until != nil {
+		where = "created >= ? and created <= ?"
+		dateParams = append(dateParams, *from, *until)
+	} else if from != nil {
+		where = "created >= ?"
+		dateParams = append(dateParams, *from)
+	} else if until != nil {
+		where = "created <= ?"
+		dateParams = append(dateParams, *until)
+	}
+
+	var (
+		results      []OpResultEntity
+		totalEntries int64
+	)
+
+	query := s.con.R().Find(&results).Order("created DESC")
+	if where != "" {
+		query = s.con.R().Where(where, dateParams...).Find(&results).Order("created DESC")
+	}
+
+	g := query.Count(&totalEntries)
+	if g.Error != nil {
+		return PagedOpResults{}, fmt.Errorf("could not retrieve count of entries; %v", g.Error)
+	}
+	g = query.Limit(pageSize).Offset(skip).Find(&results)
+	if g.Error != nil {
+		return PagedOpResults{}, fmt.Errorf("could not retrieve entries; %v", g.Error)
+	}
+
+	return PagedOpResults{Items: results, TotalCount: totalEntries}, nil
 }

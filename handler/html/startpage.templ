@@ -1,49 +1,156 @@
 package html
 
 import "cronlogger/store"
-import "time"
 import "fmt"
+import "time"
 
+func formatTime(t time.Time) string {
+    var (
+        hPrefix = "0"
+        mPrefix = "0"
+    )
 
-templ StartPage(items []store.OpResultEntity) {
+    if t.Hour() > 9 {
+        hPrefix = ""
+    }
+    if t.Minute() > 9 {
+        mPrefix = ""
+    }
+
+    return fmt.Sprintf("%s%d:%s%d", hPrefix, t.Hour(), mPrefix, t.Minute())
+}
+
+func formatDate(t time.Time) string {
+    var (
+        mPrefix = "0"
+        dPrefix = "0"
+    )
+    if t.Month() > 9 {
+        mPrefix = ""
+    }
+    if t.Day() > 9 {
+        dPrefix = ""
+    }
+
+    return fmt.Sprintf("%d-%s%d-%s%d", t.Year(), mPrefix, t.Month(), dPrefix, t.Day())
+}
+
+func disabled(skip, totalCount int64) string {
+    if skip == 0 {
+        return "disabled"
+    }
+    if skip >= totalCount {
+        return "disabled"
+    }
+    return ""
+}
+
+templ TableResult(result store.PagedOpResults, pageSize, totalPages, currentPage, skip int64, from, until string) {
     
-    <h3>List all items of cronlogger execution</h3>
-
-    <table class="table">
-    <thead>
+    for i, item := range result.Items {
         <tr>
-            <th scope="col">#</th>
-            <th scope="col">Date</th>
-            <th scope="col">AppName</th>
-            <th scope="col">Result</th>
-            <th scope="col">Output</th>
-        </tr>
-    </thead>
-    <tbody>
-        for i, item := range items {
-           <tr>
-                <th scope="row">{fmt.Sprintf("%d", i+1)}</th>
-                <td>{item.Created.Format(time.RFC3339)}</td>
-                <td><span class="badge text-bg-primary">{item.App}</span></td>
-                if item.Success {
-                    <td><span class="badge rounded-pill text-bg-success">Success</span></td>
-                } else {
-                    <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
-                }
-                <td>
-                    <a class="" data-bs-toggle="collapse" href={fmt.Sprintf("#collapse-%s", item.ID)} role="button" aria-expanded="false" aria-controls="collapseExample">
-                        Toggle output
-                    </a>
-                    <div class="collapse" id={fmt.Sprintf("collapse-%s", item.ID)}>
-                        <div class="card card-body">
-                            <pre>
-                                {item.Output}
-                            </pre>
-                        </div>
+            <th scope="row">{fmt.Sprintf("%d", int64(i)+1+(pageSize*currentPage))}</th>
+            <td>
+                <span class="badge text-bg-secondary">{formatDate(item.Created)} - {formatTime(item.Created)}</span>
+            </td>
+            <td><span class="badge text-bg-primary">{item.App}</span></td>
+            if item.Success {
+                <td><span class="badge rounded-pill text-bg-success">Success</span></td>
+            } else {
+                <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
+            }
+            <td>
+                <button type="button" data-bs-toggle="collapse" href={fmt.Sprintf("#collapse-%s", item.ID)} class="btn btn-outline-secondary btn-sm">Toggle output</button>
+                <div class="collapse" id={fmt.Sprintf("collapse-%s", item.ID)}>
+                    <div class="card card-body">
+                        <pre>
+                            {item.Output}
+                        </pre>
                     </div>
+                </div>
+            </td>
+        </tr>
+    }
+
+    if result.TotalCount > 0 {
+
+        if skip <= result.TotalCount {
+            <tr id="cronlogger_table_more_results">
+                <td colspan="5" class="text-center">
+                    <form name="paging_form">
+                        <input type="hidden" name="skip" value={skip}/>
+                        <input type="hidden" name="from" value={from}/>
+                        <input type="hidden" name="until" value={until}/>
+                        <button 
+                            type="button" 
+                            class="btn btn-outline-secondary btn-sm" {disabled(skip, result.TotalCount)}
+                                hx-post="/StartPage/TableResult"
+                                hx-target="#cronlogger_table_more_results"
+                                hx-swap="outerHTML"
+                                hx-trigger="click"
+                                hx-params="skip,from,until"
+                            >
+                            Load more results</button>
+                    </form>
                 </td>
             </tr>
         }
-    </tbody>
-    </table>
+    } else {
+        <tr id="cronlogger_table_no_results">
+            <td colspan="5" class="text-center">
+                <span>There are <mark>no results</mark> available!</span>
+            </td>
+        </tr>
+    }
+}
+
+
+templ StartPage(result store.PagedOpResults, pageSize, totalPages, currentPage, skip int64) {
+    
+    <h3>List cronlogger executions:</h3>
+    
+    <form name="searchform"
+        hx-post="/StartPage/TableResult"
+        hx-target="#item_table"
+        hx-trigger="change"
+        hx-swap="innerHTML"
+        hx-params="from,until"
+    >
+
+        <div class="row">
+            <div class="col">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                    <input type="date" class="form-control" placeholder="from" name="from"
+                        
+                    >
+                </div>
+            </div>    
+            <div class="col">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                    <input type="date" class="form-control" placeholder="until" name="until" value={formatDate(time.Now())}>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">AppName</th>
+                        <th scope="col">Result</th>
+                        <th scope="col">Output</th>
+                    </tr>
+                </thead>
+                <tbody id="item_table">
+                    @TableResult(result, pageSize, totalPages, currentPage, skip, "", "")
+                </tbody>
+            </table>
+        </div>
+
+    </form>
 }
