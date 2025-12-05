@@ -3,6 +3,7 @@ package html
 import "cronlogger/store"
 import "fmt"
 import "time"
+import "cronlogger"
 
 func formatTime(t time.Time) string {
     var (
@@ -45,32 +46,71 @@ func disabled(skip, totalCount int64) string {
     return ""
 }
 
-templ TableResult(result store.PagedOpResults, pageSize, totalPages, currentPage, skip int64, from, until string) {
-    
-    for i, item := range result.Items {
-        <tr>
-            <th scope="row">{fmt.Sprintf("%d", int64(i)+1+(pageSize*currentPage))}</th>
-            <td>
-                <span class="badge text-bg-secondary">{formatDate(item.Created)} - {formatTime(item.Created)}</span>
-            </td>
-            <td><span class="badge text-bg-primary">{item.App}</span></td>
-            if item.Success {
-                <td><span class="badge rounded-pill text-bg-success">Success</span></td>
-            } else {
-                <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
-            }
-            <td>
-                <button type="button" data-bs-toggle="collapse" href={fmt.Sprintf("#collapse-%s", item.ID)} class="btn btn-outline-secondary btn-sm">Toggle output</button>
-                <div class="collapse" id={fmt.Sprintf("collapse-%s", item.ID)}>
-                    <div class="card card-body">
-                        <pre>
-                            {item.Output}
-                        </pre>
-                    </div>
-                </div>
-            </td>
-        </tr>
+func getApplicationColor(app string, config cronlogger.AppConfig) string {
+    for _, item := range config.Applications {
+        if item.Name == app {
+            return fmt.Sprintf("background-color:%s !important;", item.Color)
+        }
     }
+    return fmt.Sprintf("background-color:%s !important;", config.DefaultColor)
+}
+
+templ app(appName string, config cronlogger.AppConfig) {
+    <span class="badge text-bg-primary" style={getApplicationColor(appName, config)}>{appName}</span> 
+}
+
+func toggleVisibility(show bool) string {
+    if show {
+        return ""
+    }
+    return "d-none"
+}
+
+css console() {
+    background-color: black;
+    color: white;
+}
+
+templ TableRow(item store.OpResultEntity, config cronlogger.AppConfig, index int64, showOutput bool) {
+    
+    <tr id={fmt.Sprintf("item-%s", item.ID)}>
+        <th scope="row">{fmt.Sprintf("%d", index)}</th>
+        <td>
+            <span class="badge text-bg-secondary">{formatDate(item.Created)} - {formatTime(item.Created)}</span>
+        </td>
+        <td>@app(item.App, config)</td>
+        if item.Success {
+            <td><span class="badge rounded-pill text-bg-success">Success</span></td>
+        } else {
+            <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
+        }
+        <td>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                    hx-get={fmt.Sprintf("/StartPage/TableResult/OutputDetail/%s/%d/%v", item.ID, index, !showOutput)}
+                    hx-trigger="click"
+                    hx-swap="outerHTML"
+                    hx-target={fmt.Sprintf("#item-%s", item.ID)}
+                    hx-params="show"
+                
+                >Toggle output</button> 
+
+                if showOutput {
+                <div class={"card card-body", console()}>
+                    <pre>
+                        {item.Output}
+                    </pre>
+                </div>   
+                }  
+        </td>
+    </tr>
+}
+
+
+templ TableResult(result store.PagedOpResults, config cronlogger.AppConfig, pageSize, totalPages, currentPage, skip int64, from, until, application string) {
+
+        for i, item := range result.Items { 
+            @TableRow(item, config, (int64(i)+1+(pageSize*currentPage)), false)
+        }
 
     if result.TotalCount > 0 {
 
@@ -78,6 +118,7 @@ templ TableResult(result store.PagedOpResults, pageSize, totalPages, currentPage
             <tr id="cronlogger_table_more_results">
                 <td colspan="5" class="text-center">
                     <form name="paging_form">
+                        <input type="hidden" name="application" value={application}/>
                         <input type="hidden" name="skip" value={skip}/>
                         <input type="hidden" name="from" value={from}/>
                         <input type="hidden" name="until" value={until}/>
@@ -105,7 +146,7 @@ templ TableResult(result store.PagedOpResults, pageSize, totalPages, currentPage
 }
 
 
-templ StartPage(result store.PagedOpResults, pageSize, totalPages, currentPage, skip int64) {
+templ StartPage(result store.PagedOpResults, config cronlogger.AppConfig, apps []string, pageSize, totalPages, currentPage, skip int64) {
     
     <h3>List cronlogger executions:</h3>
     
@@ -114,7 +155,7 @@ templ StartPage(result store.PagedOpResults, pageSize, totalPages, currentPage, 
         hx-target="#item_table"
         hx-trigger="change"
         hx-swap="innerHTML"
-        hx-params="from,until"
+        hx-params="from,until,application"
     >
 
         <div class="row">
@@ -132,6 +173,17 @@ templ StartPage(result store.PagedOpResults, pageSize, totalPages, currentPage, 
                     <input type="date" class="form-control" placeholder="until" name="until" value={formatDate(time.Now())}>
                 </div>
             </div>
+            <div class="col">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-app-indicator"></i></span>
+                    <select class="form-select" aria-label="Default select example" name="application">
+                        <option value=""></option>
+                        for _, app := range apps {
+                            <option value={app}>{app}</option>
+                        }
+                    </select>
+                </div>
+            </div>
         </div>
         
         <div class="table-responsive">
@@ -141,13 +193,13 @@ templ StartPage(result store.PagedOpResults, pageSize, totalPages, currentPage, 
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Date</th>
-                        <th scope="col">AppName</th>
+                        <th scope="col">Application</th>
                         <th scope="col">Result</th>
                         <th scope="col">Output</th>
                     </tr>
                 </thead>
                 <tbody id="item_table">
-                    @TableResult(result, pageSize, totalPages, currentPage, skip, "", "")
+                    @TableResult(result, config, pageSize, totalPages, currentPage, skip, "", "", "")
                 </tbody>
             </table>
         </div>

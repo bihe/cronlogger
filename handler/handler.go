@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"cronlogger"
 	"cronlogger/handler/html"
 	"cronlogger/store"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,14 +18,16 @@ type CronLogHandler struct {
 	store   store.OpResultStore
 	logger  *slog.Logger
 	version string
+	config  cronlogger.AppConfig
 }
 
 // New returns a new instance of the CronLogHandler
-func New(store store.OpResultStore, logger *slog.Logger, version string) *CronLogHandler {
+func New(store store.OpResultStore, logger *slog.Logger, version string, config cronlogger.AppConfig) *CronLogHandler {
 	return &CronLogHandler{
 		store:   store,
 		logger:  logger,
 		version: version,
+		config:  config,
 	}
 }
 
@@ -42,7 +46,7 @@ func (c *CronLogHandler) StartPage() http.HandlerFunc {
 		c.logger.Info("serving the StartPage")
 
 		var skip int64
-		result, err := c.store.GetPagedItems(defaultPageSize, int(skip), nil, nil)
+		result, err := c.store.GetPagedItems(defaultPageSize, int(skip), nil, nil, "")
 		if err != nil {
 			c.logger.Error(fmt.Sprintf("could not get items from store; %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -50,16 +54,25 @@ func (c *CronLogHandler) StartPage() http.HandlerFunc {
 			return
 		}
 
-		totalPages, currentPage := getPageInfo(result, int64(skip))
+		apps, err := c.store.GetAvailApps()
+		if err != nil {
+			c.logger.Error(fmt.Sprintf("could not get available apps from store; %v", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			html.ErrorPageLayout(html.ErrorApplication("/", r, fmt.Sprintf("could not get available apps from store; %v", err))).Render(r.Context(), w)
+			return
+		}
+
+		totalPages, currentPage := getPaginationInfo(result, int64(skip))
 		skip = skip + defaultPageSize
 
-		html.Layout(html.StartPage(result, defaultPageSize, totalPages, currentPage, skip), c.version).Render(r.Context(), w)
+		html.Layout(html.StartPage(result, c.config, apps, defaultPageSize, totalPages, currentPage, skip), c.version).Render(r.Context(), w)
 	}
 }
 
 const skipParamName = "skip"
 const dateFromParamName = "from"
 const dateUntilParamName = "until"
+const applicationParamName = "application"
 const dateFormat = "2006-01-02"
 
 // TableResult is used via htmx and only provides the table results
@@ -67,7 +80,7 @@ func (c *CronLogHandler) TableResult() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
-			c.logger.Error(fmt.Sprintf("could not parse provided formdate; %v", err))
+			c.logger.Error(fmt.Sprintf("could not parse provided formdata; %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
 			html.ErrorPageLayout(html.ErrorApplication("/", r, fmt.Sprintf("could not get items from store; %v", err))).Render(r.Context(), w)
 			return
@@ -76,6 +89,7 @@ func (c *CronLogHandler) TableResult() http.HandlerFunc {
 		skipParam := r.FormValue(skipParamName)
 		fromParam := r.FormValue(dateFromParamName)
 		untilParam := r.FormValue(dateUntilParamName)
+		appParam := r.FormValue(applicationParamName)
 
 		var (
 			skip  int64
@@ -101,7 +115,7 @@ func (c *CronLogHandler) TableResult() http.HandlerFunc {
 			until = parseDate(untilParam)
 		}
 
-		result, err := c.store.GetPagedItems(defaultPageSize, int(skip), getStartDate(from), getEndDate(until))
+		result, err := c.store.GetPagedItems(defaultPageSize, int(skip), getStartDate(from), getEndDate(until), appParam)
 		if err != nil {
 			c.logger.Error(fmt.Sprintf("could not get items from store; %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -110,12 +124,47 @@ func (c *CronLogHandler) TableResult() http.HandlerFunc {
 		}
 
 		skip = skip + defaultPageSize
-		totalPages, currentPage := getPageInfo(result, int64(skip))
-		html.TableResult(result, defaultPageSize, totalPages, currentPage, skip, formatDate(from), formatDate(until)).Render(r.Context(), w)
+		totalPages, currentPage := getPaginationInfo(result, int64(skip))
+		html.TableResult(result, c.config, defaultPageSize, totalPages, currentPage, skip, formatDate(from), formatDate(until), appParam).Render(r.Context(), w)
 	}
 }
 
-func getPageInfo(result store.PagedOpResults, skip int64) (totalPages, currentPage int64) {
+// OutputDetail provides the specific output of an execution
+func (c *CronLogHandler) OutputDetail() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idParam := r.PathValue("id")
+		if idParam == "" {
+			c.logger.Error("no id param supplied")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		indexParam := r.PathValue("index")
+		index, err := strconv.Atoi(indexParam)
+		if err != nil {
+			c.logger.Error("could not parse index param")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		showParam := r.PathValue("show")
+		var showToggle bool
+		showToggle = true
+		if strings.ToUpper(showParam) == "TRUE" {
+			showToggle = false
+		}
+
+		item, err := c.store.GetById(idParam)
+		if err != nil {
+			c.logger.Error("could not get item by id '%s'; %v", idParam, err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		html.TableRow(item, c.config, int64(index), !showToggle).Render(r.Context(), w)
+	}
+}
+
+func getPaginationInfo(result store.PagedOpResults, skip int64) (totalPages, currentPage int64) {
 	totalPages = result.TotalCount / defaultPageSize
 	modPageSize := result.TotalCount % defaultPageSize
 	if modPageSize != 0 {

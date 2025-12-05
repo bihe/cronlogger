@@ -31,8 +31,10 @@ func (OpResultEntity) TableName() string {
 // OpResultStore provides methods to interact with the store
 type OpResultStore interface {
 	Create(item OpResultEntity) (OpResultEntity, error)
+	GetById(id string) (OpResultEntity, error)
 	GetAll() ([]OpResultEntity, error)
-	GetPagedItems(pageSize, skip int, from, until *time.Time) (PagedOpResults, error)
+	GetPagedItems(pageSize, skip int, from, until *time.Time, appName string) (PagedOpResults, error)
+	GetAvailApps() ([]string, error)
 }
 
 // CreateStore creates a new store to persist data
@@ -82,16 +84,29 @@ func (s *dbStore) Create(item OpResultEntity) (OpResultEntity, error) {
 	return item, nil
 }
 
+func (s *dbStore) GetById(id string) (OpResultEntity, error) {
+	if id == "" {
+		return OpResultEntity{}, fmt.Errorf("no id supplied")
+	}
+
+	ctx := context.Background()
+	item, err := gorm.G[OpResultEntity](s.con.R()).Where("id = ?", id).First(ctx)
+	if err != nil {
+		return OpResultEntity{}, fmt.Errorf("could not retrieve all entries; %v", err)
+	}
+	return item, nil
+}
+
 func (s *dbStore) GetAll() ([]OpResultEntity, error) {
 	ctx := context.Background()
-	results, err := gorm.G[OpResultEntity](s.con.W()).Order("created DESC").Find(ctx)
+	results, err := gorm.G[OpResultEntity](s.con.R()).Order("created DESC").Find(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve all entries; %v", err)
 	}
 	return results, nil
 }
 
-func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time) (PagedOpResults, error) {
+func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time, appName string) (PagedOpResults, error) {
 	if pageSize < 0 {
 		return PagedOpResults{}, fmt.Errorf("negative pagesizes do not make sense")
 	}
@@ -101,16 +116,24 @@ func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time) (Pag
 	}
 
 	where := ""
-	dateParams := make([]any, 0)
+	params := make([]any, 0)
 	if from != nil && until != nil {
 		where = "created >= ? and created <= ?"
-		dateParams = append(dateParams, *from, *until)
+		params = append(params, *from, *until)
 	} else if from != nil {
 		where = "created >= ?"
-		dateParams = append(dateParams, *from)
+		params = append(params, *from)
 	} else if until != nil {
 		where = "created <= ?"
-		dateParams = append(dateParams, *until)
+		params = append(params, *until)
+	}
+
+	if appName != "" {
+		if where != "" {
+			where += " and "
+		}
+		where += "application = ?"
+		params = append(params, appName)
 	}
 
 	var (
@@ -120,7 +143,7 @@ func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time) (Pag
 
 	query := s.con.R().Find(&results).Order("created DESC")
 	if where != "" {
-		query = s.con.R().Where(where, dateParams...).Find(&results).Order("created DESC")
+		query = s.con.R().Where(where, params...).Find(&results).Order("created DESC")
 	}
 
 	g := query.Count(&totalEntries)
@@ -133,4 +156,13 @@ func (s *dbStore) GetPagedItems(pageSize, skip int, from, until *time.Time) (Pag
 	}
 
 	return PagedOpResults{Items: results, TotalCount: totalEntries}, nil
+}
+
+func (s *dbStore) GetAvailApps() ([]string, error) {
+	var apps []string
+	g := s.con.R().Model(&OpResultEntity{}).Group("application").Order("application ASC").Pluck("application", &apps)
+	if g.Error != nil {
+		return nil, g.Error
+	}
+	return apps, nil
 }

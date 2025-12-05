@@ -14,7 +14,8 @@ var content embed.FS
 func SetupRoutes(mux *http.ServeMux, handler *CronLogHandler) {
 	mux.HandleFunc("/", handler.RedirectStart())
 	mux.HandleFunc("/StartPage", handler.StartPage())
-	mux.HandleFunc("/StartPage/TableResult", handler.TableResult())
+	mux.HandleFunc("POST /StartPage/TableResult", handler.TableResult())
+	mux.HandleFunc("GET /StartPage/TableResult/OutputDetail/{id}/{index}/{show}", handler.OutputDetail())
 	serveStaticDir(mux, "assets")
 }
 

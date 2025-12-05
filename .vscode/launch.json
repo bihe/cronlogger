@@ -26,7 +26,8 @@
             "args": [
                 "--host=localhost",
                 "--port=9000",
-                "--db=../../cronlog-store.db"
+                "--db=../../cronlog-store.db",
+                "--config=../../"
             ],
             "internalConsoleOptions": "openOnSessionStart"
         }

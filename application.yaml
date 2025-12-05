@@ -1,0 +1,9 @@
+applications:
+  - name: "rclone-gdrive"
+    color: "#4285F4"
+  - name: "rclone-aws"
+    color: "#ff6200"
+  - name: "acme-tls"
+    color: "#F4B400"
+
+defaultColor: "#212529"

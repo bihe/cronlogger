@@ -45,6 +45,21 @@ func Test_Create_OpResult(t *testing.T) {
 		t.Errorf("item needs to have a created timestamp")
 	}
 
+	item, err = s.GetById(item.ID)
+	if err != nil {
+		t.Errorf("could not get item by ID; %v", err)
+	}
+
+	_, err = s.GetById("")
+	if err == nil {
+		t.Errorf("expected an error for missing ID")
+	}
+
+	_, err = s.GetById("no-id")
+	if err == nil {
+		t.Errorf("expected an error for wrong ID")
+	}
+
 	items, err = s.GetAll()
 	if err != nil {
 		t.Errorf("could not get all items; %v", err)
@@ -100,7 +115,7 @@ func Test_Paged_Results(t *testing.T) {
 	// ----------------------------------------------------------------------
 
 	// retrieve all 10 items
-	res, err := s.GetPagedItems(10, 0, nil, nil)
+	res, err := s.GetPagedItems(10, 0, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -109,7 +124,7 @@ func Test_Paged_Results(t *testing.T) {
 	}
 
 	// retrieve 5 items
-	res, err = s.GetPagedItems(5, 0, nil, nil)
+	res, err = s.GetPagedItems(5, 0, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -127,7 +142,7 @@ func Test_Paged_Results(t *testing.T) {
 	}
 
 	// retrieve 3 items / skip 3
-	res, err = s.GetPagedItems(3, 3, nil, nil)
+	res, err = s.GetPagedItems(3, 3, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -144,9 +159,19 @@ func Test_Paged_Results(t *testing.T) {
 		t.Errorf("expected test_4 item, got %s", res.Items[0].App)
 	}
 
-	// filter date
+	// filter application
 	future := time.Now().AddDate(1, 0, 0)
-	res, err = s.GetPagedItems(10, 0, &future, nil)
+	res, err = s.GetPagedItems(10, 0, nil, &future, "test_9")
+	if err != nil {
+		t.Errorf("could not get paged items; %v", err)
+	}
+	if res.TotalCount != 1 {
+		t.Errorf("expected 1 total items, got %d", res.TotalCount)
+	}
+
+	// filter date
+
+	res, err = s.GetPagedItems(10, 0, &future, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -155,7 +180,7 @@ func Test_Paged_Results(t *testing.T) {
 	}
 
 	past := time.Now().AddDate(-1, 0, 0)
-	res, err = s.GetPagedItems(10, 0, nil, &past)
+	res, err = s.GetPagedItems(10, 0, nil, &past, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -163,7 +188,7 @@ func Test_Paged_Results(t *testing.T) {
 		t.Errorf("expected 0 total items, got %d", res.TotalCount)
 	}
 
-	res, err = s.GetPagedItems(10, 0, &past, &future)
+	res, err = s.GetPagedItems(10, 0, &past, &future, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -174,7 +199,7 @@ func Test_Paged_Results(t *testing.T) {
 	// corner cases
 	// ----------------------------------------------------------------------
 
-	res, err = s.GetPagedItems(0, 0, nil, nil)
+	res, err = s.GetPagedItems(0, 0, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -186,19 +211,19 @@ func Test_Paged_Results(t *testing.T) {
 	}
 
 	// negative pagesize
-	res, err = s.GetPagedItems(-2, 0, nil, nil)
+	res, err = s.GetPagedItems(-2, 0, nil, nil, "")
 	if err == nil {
 		t.Errorf("error expected for negative pagesize")
 	}
 
 	// negative skip
-	res, err = s.GetPagedItems(0, -3, nil, nil)
+	res, err = s.GetPagedItems(0, -3, nil, nil, "")
 	if err == nil {
 		t.Errorf("error expected for negative offset")
 	}
 
 	// skip is too big
-	res, err = s.GetPagedItems(0, 100, nil, nil)
+	res, err = s.GetPagedItems(0, 100, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -210,7 +235,7 @@ func Test_Paged_Results(t *testing.T) {
 	}
 
 	// retrieve 3 items / skip 8
-	res, err = s.GetPagedItems(3, 8, nil, nil)
+	res, err = s.GetPagedItems(3, 8, nil, nil, "")
 	if err != nil {
 		t.Errorf("could not get paged items; %v", err)
 	}
@@ -227,4 +252,33 @@ func Test_Paged_Results(t *testing.T) {
 		t.Errorf("expected test_0 item, got %s", res.Items[1].App)
 	}
 
+}
+
+func Test_Available_Apps(t *testing.T) {
+	s, db := getStore(t)
+	defer db.Close()
+
+	s.Create(store.OpResultEntity{
+		App:     "test1",
+		Success: true,
+		Output:  "",
+	})
+	s.Create(store.OpResultEntity{
+		App:     "test2",
+		Success: false,
+		Output:  "",
+	})
+	s.Create(store.OpResultEntity{
+		App:     "test3",
+		Success: false,
+		Output:  "",
+	})
+
+	items, err := s.GetAvailApps()
+	if err != nil {
+		t.Errorf("could not get all items; %v", err)
+	}
+	if items[0] != "test1" && items[2] != "test3" {
+		t.Errorf("the ordering of the results does not work")
+	}
 }
