@@ -221,9 +221,9 @@ func OutputDetails(item store.OpResultEntity, toggle bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/StartPage/TableResult/OutputDetail/%s/%v", item.ID, toggle))
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/cronlogger/StartPage/TableResult/OutputDetail/%s/%v", item.ID, toggle))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `handler/html/startpage.templ`, Line: 89, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `handler/html/startpage.templ`, Line: 89, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -406,9 +406,9 @@ func TableResult(result store.PagedOpResults, config cronlogger.AppConfig, pageS
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
-			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/StartPage/TableResult/ToggleOutputDetail/%s", item.ID))
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/cronlogger/StartPage/TableResult/ToggleOutputDetail/%s", item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `handler/html/startpage.templ`, Line: 119, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `handler/html/startpage.templ`, Line: 119, Col: 107}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -490,7 +490,7 @@ func TableResult(result store.PagedOpResults, config cronlogger.AppConfig, pageS
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " hx-post=\"/StartPage/TableResult\" hx-target=\"#cronlogger_table_more_results\" hx-swap=\"outerHTML\" hx-trigger=\"click\" hx-params=\"skip,from,until\">Load more results</button></form></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " hx-post=\"/cronlogger/StartPage/TableResult\" hx-target=\"#cronlogger_table_more_results\" hx-swap=\"outerHTML\" hx-trigger=\"click\" hx-params=\"skip,from,until\">Load more results</button></form></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -526,7 +526,7 @@ func StartPage(result store.PagedOpResults, config cronlogger.AppConfig, apps []
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<h3>List cronlogger executions:</h3><form name=\"searchform\" hx-post=\"/StartPage/TableResult\" hx-target=\"#item_table\" hx-trigger=\"change\" hx-swap=\"innerHTML\" hx-params=\"from,until,application\"><div class=\"row\"><div class=\"col\"><div class=\"input-group mb-3\"><span class=\"input-group-text\"><i class=\"bi bi-calendar-date\"></i></span> <input type=\"date\" class=\"form-control\" placeholder=\"from\" name=\"from\"></div></div><div class=\"col\"><div class=\"input-group mb-3\"><span class=\"input-group-text\"><i class=\"bi bi-calendar-date\"></i></span> <input type=\"date\" class=\"form-control\" placeholder=\"until\" name=\"until\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<h3>List cronlogger executions:</h3><form name=\"searchform\" hx-post=\"/cronlogger/StartPage/TableResult\" hx-target=\"#item_table\" hx-trigger=\"change\" hx-swap=\"innerHTML\" hx-params=\"from,until,application\"><div class=\"row\"><div class=\"col\"><div class=\"input-group mb-3\"><span class=\"input-group-text\"><i class=\"bi bi-calendar-date\"></i></span> <input type=\"date\" class=\"form-control\" placeholder=\"from\" name=\"from\"></div></div><div class=\"col\"><div class=\"input-group mb-3\"><span class=\"input-group-text\"><i class=\"bi bi-calendar-date\"></i></span> <input type=\"date\" class=\"form-control\" placeholder=\"until\" name=\"until\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

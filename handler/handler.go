@@ -37,7 +37,7 @@ const defaultPageSize = 20
 // RedirectStart redirects the root path to the startpage
 func (c *CronLogHandler) RedirectStart() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/StartPage", http.StatusFound)
+		http.Redirect(w, r, "/cronlogger/StartPage", http.StatusFound)
 	}
 }
 

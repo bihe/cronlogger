@@ -13,10 +13,15 @@ var content embed.FS
 
 func SetupRoutes(mux *http.ServeMux, handler *CronLogHandler) {
 	mux.HandleFunc("/", handler.RedirectStart())
-	mux.HandleFunc("/StartPage", handler.StartPage())
-	mux.HandleFunc("POST /StartPage/TableResult", handler.TableResult())
-	mux.HandleFunc("GET /StartPage/TableResult/OutputDetail/{id}/{show}", handler.OutputDetail())
-	mux.HandleFunc("GET /StartPage/TableResult/ToggleOutputDetail/{id}", handler.ToggleOutputDetail())
+
+	cronlogRoutes := http.NewServeMux()
+	cronlogRoutes.HandleFunc("/StartPage", handler.StartPage())
+	cronlogRoutes.HandleFunc("POST /StartPage/TableResult", handler.TableResult())
+	cronlogRoutes.HandleFunc("GET /StartPage/TableResult/OutputDetail/{id}/{show}", handler.OutputDetail())
+	cronlogRoutes.HandleFunc("GET /StartPage/TableResult/ToggleOutputDetail/{id}", handler.ToggleOutputDetail())
+
+	mux.Handle("/cronlogger/", http.StripPrefix("/cronlogger", cronlogRoutes))
+
 	serveStaticDir(mux, "assets")
 }
 

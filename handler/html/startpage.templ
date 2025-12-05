@@ -86,7 +86,7 @@ templ OutputDetails(item store.OpResultEntity, toggle bool) {
         hx-trigger="showOutput once" 
         hx-swap="outerHTML"
         hx-target={fmt.Sprintf("#item-output-%s", item.ID)}
-        hx-get={fmt.Sprintf("/StartPage/TableResult/OutputDetail/%s/%v", item.ID, toggle)}
+        hx-get={fmt.Sprintf("/cronlogger/StartPage/TableResult/OutputDetail/%s/%v", item.ID, toggle)}
         >
         if !toggle {
         <td colspan="5">  
@@ -116,7 +116,7 @@ templ TableResult(result store.PagedOpResults, config cronlogger.AppConfig, page
             }
             <td>
                     <button type="button" class="btn btn-outline-secondary btn-sm"
-                    hx-get={fmt.Sprintf("/StartPage/TableResult/ToggleOutputDetail/%s", item.ID)}
+                    hx-get={fmt.Sprintf("/cronlogger/StartPage/TableResult/ToggleOutputDetail/%s", item.ID)}
                     hx-trigger="click"
                     hx-swap="none"
                 
@@ -140,7 +140,7 @@ templ TableResult(result store.PagedOpResults, config cronlogger.AppConfig, page
                         <button 
                             type="button" 
                             class="btn btn-outline-secondary btn-sm" {disabled(skip, result.TotalCount)}
-                                hx-post="/StartPage/TableResult"
+                                hx-post="/cronlogger/StartPage/TableResult"
                                 hx-target="#cronlogger_table_more_results"
                                 hx-swap="outerHTML"
                                 hx-trigger="click"
@@ -166,7 +166,7 @@ templ StartPage(result store.PagedOpResults, config cronlogger.AppConfig, apps [
     <h3>List cronlogger executions:</h3>
     
     <form name="searchform"
-        hx-post="/StartPage/TableResult"
+        hx-post="/cronlogger/StartPage/TableResult"
         hx-target="#item_table"
         hx-trigger="change"
         hx-swap="innerHTML"
