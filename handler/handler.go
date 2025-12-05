@@ -4,6 +4,7 @@ import (
 	"cronlogger"
 	"cronlogger/handler/html"
 	"cronlogger/store"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -129,6 +130,52 @@ func (c *CronLogHandler) TableResult() http.HandlerFunc {
 	}
 }
 
+// define a header for htmx to trigger events
+// https://htmx.org/headers/hx-trigger/
+const htmxHeaderTrigger = "HX-Trigger"
+
+/*
+https://htmx.org/headers/hx-trigger/
+
+Targeting Other Elements
+You can trigger events on other target elements by adding a target argument to the JSON object.
+
+HX-Trigger: {"showMessage":{"target" : "#otherElement"}}
+*/
+
+type elementTarget struct {
+	Target string `json:"target,omitempty"`
+}
+
+// this event triggers an action on a DOM element
+// the provided id tells htmx to execute the trigger on the specific element
+type showOutputTrigger struct {
+	ShowOutput elementTarget `json:"showOutput,omitempty"`
+}
+
+// ToggleOutputDetail triggers the custom event to show the output details
+// this logic only sends an HTTP header with the target-id of the DOM
+// element which should react
+func (c *CronLogHandler) ToggleOutputDetail() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idParam := r.PathValue("id")
+		if idParam == "" {
+			c.logger.Error("no id param supplied")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		triggerEvent := showOutputTrigger{
+			ShowOutput: elementTarget{
+				Target: fmt.Sprintf("#item-output-%s", idParam),
+			},
+		}
+
+		triggerJson := Json(triggerEvent)
+		w.Header().Add(htmxHeaderTrigger, triggerJson)
+	}
+}
+
 // OutputDetail provides the specific output of an execution
 func (c *CronLogHandler) OutputDetail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -138,19 +185,12 @@ func (c *CronLogHandler) OutputDetail() http.HandlerFunc {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		indexParam := r.PathValue("index")
-		index, err := strconv.Atoi(indexParam)
-		if err != nil {
-			c.logger.Error("could not parse index param")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
 
 		showParam := r.PathValue("show")
-		var showToggle bool
-		showToggle = true
+		var toggle bool
+		toggle = true
 		if strings.ToUpper(showParam) == "TRUE" {
-			showToggle = false
+			toggle = false
 		}
 
 		item, err := c.store.GetById(idParam)
@@ -160,7 +200,7 @@ func (c *CronLogHandler) OutputDetail() http.HandlerFunc {
 			return
 		}
 
-		html.TableRow(item, c.config, int64(index), !showToggle).Render(r.Context(), w)
+		html.OutputDetails(item, toggle).Render(r.Context(), w)
 	}
 }
 
@@ -220,4 +260,13 @@ func formatDate(t *time.Time) string {
 	}
 
 	return fmt.Sprintf("%d-%s%d-%s%d", t.Year(), mPrefix, t.Month(), dPrefix, t.Day())
+}
+
+// Json serialized the given data
+func Json[T any](data T) string {
+	payload, err := json.Marshal(data)
+	if err != nil {
+		panic(fmt.Sprintf("could not marshall data; %v", err))
+	}
+	return string(payload)
 }

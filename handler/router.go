@@ -15,7 +15,8 @@ func SetupRoutes(mux *http.ServeMux, handler *CronLogHandler) {
 	mux.HandleFunc("/", handler.RedirectStart())
 	mux.HandleFunc("/StartPage", handler.StartPage())
 	mux.HandleFunc("POST /StartPage/TableResult", handler.TableResult())
-	mux.HandleFunc("GET /StartPage/TableResult/OutputDetail/{id}/{index}/{show}", handler.OutputDetail())
+	mux.HandleFunc("GET /StartPage/TableResult/OutputDetail/{id}/{show}", handler.OutputDetail())
+	mux.HandleFunc("GET /StartPage/TableResult/ToggleOutputDetail/{id}", handler.ToggleOutputDetail())
 	serveStaticDir(mux, "assets")
 }
 

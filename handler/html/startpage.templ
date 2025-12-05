@@ -69,48 +69,63 @@ func toggleVisibility(show bool) string {
 css console() {
     background-color: black;
     color: white;
+    max-width: 95vw;
 }
 
-templ TableRow(item store.OpResultEntity, config cronlogger.AppConfig, index int64, showOutput bool) {
-    
-    <tr id={fmt.Sprintf("item-%s", item.ID)}>
-        <th scope="row">{fmt.Sprintf("%d", index)}</th>
-        <td>
-            <span class="badge text-bg-secondary">{formatDate(item.Created)} - {formatTime(item.Created)}</span>
-        </td>
-        <td>@app(item.App, config)</td>
-        if item.Success {
-            <td><span class="badge rounded-pill text-bg-success">Success</span></td>
-        } else {
-            <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
-        }
-        <td>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
-                    hx-get={fmt.Sprintf("/StartPage/TableResult/OutputDetail/%s/%d/%v", item.ID, index, !showOutput)}
-                    hx-trigger="click"
-                    hx-swap="outerHTML"
-                    hx-target={fmt.Sprintf("#item-%s", item.ID)}
-                    hx-params="show"
-                
-                >Toggle output</button> 
+css pre_console() {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    font-size: .875em;
+}
 
-                if showOutput {
-                <div class={"card card-body", console()}>
-                    <pre>
-                        {item.Output}
-                    </pre>
-                </div>   
-                }  
+templ OutputDetails(item store.OpResultEntity, toggle bool) {
+    
+    <tr id={fmt.Sprintf("item-output-%s", item.ID)} class={templ.KV("d-none", toggle)}
+        hx-trigger="showOutput once" 
+        hx-swap="outerHTML"
+        hx-target={fmt.Sprintf("#item-output-%s", item.ID)}
+        hx-get={fmt.Sprintf("/StartPage/TableResult/OutputDetail/%s/%v", item.ID, toggle)}
+        >
+        if !toggle {
+        <td colspan="5">  
+            <div class={"card card-body", console()}>
+                <pre class={pre_console()}>
+                 { item.Output }   
+                </pre>
+            </div>   
         </td>
+        }
     </tr>
 }
 
 
 templ TableResult(result store.PagedOpResults, config cronlogger.AppConfig, pageSize, totalPages, currentPage, skip int64, from, until, application string) {
 
-        for i, item := range result.Items { 
-            @TableRow(item, config, (int64(i)+1+(pageSize*currentPage)), false)
-        }
+    for i, item := range result.Items { 
+       
+        <tr id={fmt.Sprintf("item-%s", item.ID)}>
+            <th scope="row">{fmt.Sprintf("%d", (int64(i)+1+(pageSize*currentPage)))}</th>
+            <td><span class="badge text-bg-secondary">{formatDate(item.Created)} - {formatTime(item.Created)}</span></td>
+            <td>@app(item.App, config)</td>
+            if item.Success {
+                <td><span class="badge rounded-pill text-bg-success">Success</span></td>
+            } else {
+                <td><span class="badge rounded-pill text-bg-danger">Error</span></td>
+            }
+            <td>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                    hx-get={fmt.Sprintf("/StartPage/TableResult/ToggleOutputDetail/%s", item.ID)}
+                    hx-trigger="click"
+                    hx-swap="none"
+                
+                >Toggle output</button> 
+            </td>      
+        </tr>
+        
+        @OutputDetails(item, true)
+    }
 
     if result.TotalCount > 0 {
 
