@@ -108,7 +108,7 @@ func console() templ.CSSClass {
 	templ_7745c5c3_CSSBuilder := templruntime.GetBuilder()
 	templ_7745c5c3_CSSBuilder.WriteString(`background-color:black;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`color:white;`)
-	templ_7745c5c3_CSSBuilder.WriteString(`max-width:95vw;`)
+	templ_7745c5c3_CSSBuilder.WriteString(`max-width:100vw;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`console`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
 		ID:    templ_7745c5c3_CSSID,
