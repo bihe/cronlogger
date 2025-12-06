@@ -6,34 +6,13 @@ import "time"
 import "cronlogger"
 
 func formatTime(t time.Time) string {
-    var (
-        hPrefix = "0"
-        mPrefix = "0"
-    )
-
-    if t.Hour() > 9 {
-        hPrefix = ""
-    }
-    if t.Minute() > 9 {
-        mPrefix = ""
-    }
-
-    return fmt.Sprintf("%s%d:%s%d", hPrefix, t.Hour(), mPrefix, t.Minute())
+    // "2006.01.02 15:04:05"
+    return t.Format("15:04")
 }
 
 func formatDate(t time.Time) string {
-    var (
-        mPrefix = "0"
-        dPrefix = "0"
-    )
-    if t.Month() > 9 {
-        mPrefix = ""
-    }
-    if t.Day() > 9 {
-        dPrefix = ""
-    }
-
-    return fmt.Sprintf("%d-%s%d-%s%d", t.Year(), mPrefix, t.Month(), dPrefix, t.Day())
+    // "2006.01.02 15:04:05"
+    return t.Format("2006-01-02")
 }
 
 func disabled(skip, totalCount int64) string {

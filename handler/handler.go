@@ -247,19 +247,10 @@ func formatDate(t *time.Time) string {
 	if t == nil {
 		return ""
 	}
-
-	var (
-		mPrefix = "0"
-		dPrefix = "0"
-	)
-	if t.Month() > 9 {
-		mPrefix = ""
-	}
-	if t.Day() > 9 {
-		dPrefix = ""
-	}
-
-	return fmt.Sprintf("%d-%s%d-%s%d", t.Year(), mPrefix, t.Month(), dPrefix, t.Day())
+	// again and again the "stupid" golang decision to go with a reference data
+	// instead of the more commonly known date-format patterns YYYY-mm-dd ...
+	// "2006.01.02 15:04:05"
+	return t.Format("2006-01-02")
 }
 
 // Json serialized the given data
