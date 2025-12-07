@@ -1,6 +1,6 @@
 # Cronlogger
 
-Capture the output of cron-tasks and store the in a sqlite DB.
+Capture the output of cron-tasks and store the output in a sqlite DB.
 
 - cmd/logger
 
