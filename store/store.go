@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"cronlogger/persistence"
 	"database/sql"
 	"fmt"
 	"time"
@@ -38,7 +37,7 @@ type OpResultStore interface {
 }
 
 // CreateStore creates a new store to persist data
-func CreateStore(con persistence.Connection) OpResultStore {
+func CreateStore(con Connection) OpResultStore {
 	return &dbStore{
 		con: con,
 	}
@@ -46,8 +45,8 @@ func CreateStore(con persistence.Connection) OpResultStore {
 
 // CreateSqliteStoreFromDbPath initializes a new store from a sqlite file path
 func CreateSqliteStoreFromDbPath(dbPath string) (OpResultStore, *sql.DB, error) {
-	db := persistence.MustCreateSqliteConn(dbPath)
-	con, err := persistence.CreateGormSqliteCon(db)
+	db := MustCreateSqliteConn(dbPath)
+	con, err := CreateGormSqliteCon(db)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not create database connection: %v", err)
 	}
@@ -69,7 +68,7 @@ type PagedOpResults struct {
 // --------------------------------------------------------------------------
 
 type dbStore struct {
-	con persistence.Connection
+	con Connection
 }
 
 func (s *dbStore) Create(item OpResultEntity) (OpResultEntity, error) {
